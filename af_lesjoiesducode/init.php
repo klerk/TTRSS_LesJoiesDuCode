@@ -9,7 +9,7 @@ class Af_LesJoiesDuCode extends Plugin {
 
         function about() {
 			// version, name, description, author, is_system
-			return array(1.0, "affiche le gif des articles du site les joies du code", "klerk");
+			return array(1.1, "affiche le gif des articles du site les joies du code", "klerk");
         }
 
 		function hook_article_filter($article) {
@@ -19,22 +19,19 @@ class Af_LesJoiesDuCode extends Plugin {
 			   strpos($article["link"],"lesjoiesducode.tumblr.com/post")!== FALSE){
 				
 				if(strpos($article["plugin_data"], "af_lesjoiesducode,$owner_uid:") === FALSE) {
-					$doc = new DOMDocument();
-					@$doc->loadHTML(fetch_file_contents($article["link"]));
+                    $html = file_get_html($article["link"]);
+                    $element = $html->find('div.bodytype', 0);
+                    
+                    $images = $temp->find('p.e img');
+                    foreach($images as $image){
+                        $img_src = str_replace(".jpg",".gif",$image->src);
+                        $image->src = $img_src;
+                    }
+                    
+                    $article['content'] = $element->innertext;
 
-					$basenode = false;
-
-					if ($doc) {
-						$xpath = new DOMXPath($doc);
-						$basenode = $xpath->query('//div[@class="bodytype"]')->item(0);
-
-						if ($basenode) {
-							$article["content"] = $doc->saveXML($basenode);
-							$article["plugin_data"] = "af_lesjoiesducode,$owner_uid:" . $article["plugin_data"];
-						}
-					}
 				} else if (isset($article["stored"]["content"])) {
-						$article["content"] = $article["stored"]["content"];
+					$article["content"] = $article["stored"]["content"];
 				}
 			}
 			
